@@ -1,0 +1,19 @@
+# Build / IDE
+vendor/
+bin/
+obj/
+.DS_Store
+*.user
+*.suo
+*.cache
+
+# User secrets (local overrides)
+secrets.json
+
+# Local env — never commit; contains API keys and tokens
+.env
+.env.*
+!.env.example
+
+# Bot rules (per-server / local)
+rules.txt
