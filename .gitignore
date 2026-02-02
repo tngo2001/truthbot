@@ -1,0 +1,23 @@
+# Build
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+*.nupkg
+project.lock.json
+.DS_Store
+
+# User secrets (local overrides)
+secrets.json
+
+# Local env — never commit; contains API keys and tokens
+.env
+.env.*
+!.env.example
+
+# Generated images (optional: keep or remove)
+# GeneratedImages/
