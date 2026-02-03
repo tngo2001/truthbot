@@ -76,7 +76,7 @@ public class DiscordBotService
 
         if (string.IsNullOrWhiteSpace(input) && hasPrefix)
         {
-            await SendHelpAsync(message.Channel);
+            await SendHelpAsync(message);
             return;
         }
 
@@ -97,18 +97,18 @@ public class DiscordBotService
             {
                 if (string.IsNullOrWhiteSpace(imagePrompt))
                 {
-                    await message.Channel.SendMessageAsync($"Usage: `{_prefix}image <description>`  e.g.  `{_prefix}image a cute cat on a skateboard`");
+                    await message.ReplyAsync($"Usage: `{_prefix}image <description>`  e.g.  `{_prefix}image a cute cat on a skateboard`");
                     return;
                 }
                 await message.Channel.TriggerTypingAsync();
                 var path = await gemini.GenerateImageAsync(imagePrompt!, _imageTempDir);
                 if (path != null && File.Exists(path))
                 {
-                    await message.Channel.SendFileAsync(path, text: $"Generated: *{Escape(imagePrompt!)}*");
+                    await message.Channel.SendFileAsync(path, text: $"Generated: *{Escape(imagePrompt!)}*", messageReference: new MessageReference(message.Id));
                     try { File.Delete(path); } catch { /* ignore */ }
                 }
                 else
-                    await message.Channel.SendMessageAsync("Image generation failed or isn’t available on this key. Try chat instead.");
+                    await message.ReplyAsync("Image generation failed or isn’t available on this key. Try chat instead.");
                 return;
             }
 
@@ -116,7 +116,7 @@ public class DiscordBotService
             if (HasCommand(input, "clear", out _))
             {
                 gemini.ClearHistory();
-                await message.Channel.SendMessageAsync("Conversation cleared.");
+                await message.ReplyAsync("Conversation cleared.");
                 return;
             }
 
@@ -125,12 +125,12 @@ public class DiscordBotService
             string reply = await gemini.ChatAsync(input);
             if (reply.Length > MaxReplyLength)
                 reply = reply[..(MaxReplyLength - 3)] + "...";
-            await message.Channel.SendMessageAsync(reply);
+            await message.ReplyAsync(reply);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"[Discord] Error: {ex.Message}");
-            await message.Channel.SendMessageAsync($"Error: {ex.Message}");
+            await message.ReplyAsync($"Error: {ex.Message}");
         }
     }
 
@@ -146,9 +146,9 @@ public class DiscordBotService
 
     private static string Escape(string s) => s.Replace("*", "\\*").Replace("_", "\\_").Replace("`", "\\`");
 
-    private async Task SendHelpAsync(IMessageChannel channel)
+    private async Task SendHelpAsync(SocketUserMessage message)
     {
-        await channel.SendMessageAsync(
+        await message.ReplyAsync(
             "**TruthBot** — Chat with Gemini, generate images.\n" +
             $"• `{_prefix}image <prompt>` — generate an image\n" +
             $"• `{_prefix}clear` — new conversation\n" +
