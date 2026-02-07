@@ -46,13 +46,20 @@ if (!string.IsNullOrWhiteSpace(discordToken))
         Console.WriteLine("Discord mode requires GEMINI_API_KEY (or GOOGLE_API_KEY). Set it in your environment.");
         return 1;
     }
-    var prefix = config["BOT_PREFIX"] ?? Environment.GetEnvironmentVariable("BOT_PREFIX") ?? "tb";
-    var discordBot = new DiscordBotService(geminiApiKey, discordToken.Trim(), prefix);
+    var fbPrefix = config["BOT_PREFIX_FB"] ?? Environment.GetEnvironmentVariable("BOT_PREFIX_FB") ?? "fb";
+    var tbPrefix = config["BOT_PREFIX_TB"] ?? Environment.GetEnvironmentVariable("BOT_PREFIX_TB") ?? "tb";
+    var rulesPath = config["RULES_FILE"] ?? Environment.GetEnvironmentVariable("RULES_FILE"); // null = default rules.txt
+    var discordBot = new DiscordBotService(
+        geminiApiKey,
+        discordToken.Trim(),
+        fbPrefix: fbPrefix,
+        tbPrefix: tbPrefix,
+        rules: string.IsNullOrEmpty(rulesPath) ? new RulesService() : new RulesService(rulesPath));
     await discordBot.RunAsync();
     return 0;
 }
 
-// Console mode: local chat
+// Console mode: local chat (no image generation)
 if (string.IsNullOrWhiteSpace(geminiApiKey))
 {
     Console.WriteLine("Enter your Gemini API key (from https://aistudio.google.com/apikey):");
@@ -65,11 +72,10 @@ if (string.IsNullOrWhiteSpace(geminiApiKey))
 }
 
 var gemini = new GeminiService(geminiApiKey);
-var imageOutputDir = Path.Combine(Environment.CurrentDirectory, "GeneratedImages");
 
 Console.WriteLine();
-Console.WriteLine("TruthBot — Gemini chatbot (chat + image generation)");
-Console.WriteLine("Commands: /image <prompt>  → generate image  |  /clear  → new conversation  |  /quit  → exit");
+Console.WriteLine("TruFraudBot — Gemini chatbot");
+Console.WriteLine("Commands: /clear  → new conversation  |  /quit  → exit");
 Console.WriteLine();
 
 while (true)
@@ -88,30 +94,6 @@ while (true)
     {
         gemini.ClearHistory();
         Console.WriteLine("Conversation cleared.");
-        continue;
-    }
-
-    if (input.StartsWith("/image", StringComparison.OrdinalIgnoreCase))
-    {
-        var prompt = input["/image".Length..].Trim();
-        if (string.IsNullOrEmpty(prompt))
-        {
-            Console.WriteLine("Usage: /image <description>  e.g.  /image a cute cat on a skateboard");
-            continue;
-        }
-        Console.WriteLine("Generating image...");
-        try
-        {
-            var path = await gemini.GenerateImageAsync(prompt, imageOutputDir);
-            if (path != null)
-                Console.WriteLine($"Saved: {path}");
-            else
-                Console.WriteLine("Image generation failed or is not available on your plan. Try chat instead.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-        }
         continue;
     }
 

@@ -19,5 +19,5 @@ secrets.json
 .env.*
 !.env.example
 
-# Generated images (optional: keep or remove)
-# GeneratedImages/
+# Bot rules (per-server / local)
+rules.txt
