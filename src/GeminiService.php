@@ -8,7 +8,10 @@ namespace TruFraudBot;
  */
 final class GeminiService
 {
-    private const CHAT_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite'];
+    /** Try highest-RPD model first to preserve stricter quotas. */
+    private const CHAT_MODELS = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-flash'];
+
+    private const MAX_HISTORY_TURNS = 20;
 
     private string $apiKey;
     /** @var list<array{role: string, parts: list<array{text: string}>}> */
@@ -41,10 +44,10 @@ final class GeminiService
         ];
 
         $payload = [
-            'contents' => $this->chatHistory,
+            'contents' => $this->trimHistoryForPayload(),
             'generationConfig' => [
                 'temperature' => 0.7,
-                'maxOutputTokens' => 8192,
+                'maxOutputTokens' => 2048,
             ],
         ];
 
@@ -80,6 +83,19 @@ final class GeminiService
     public function hasHistory(): bool
     {
         return $this->chatHistory !== [];
+    }
+
+    /**
+     * Last N turns (user+model pairs) to keep payload size and TPM under control.
+     * @return list<array{role: string, parts: list<array{text: string}>}>
+     */
+    private function trimHistoryForPayload(): array
+    {
+        $maxEntries = self::MAX_HISTORY_TURNS * 2;
+        if (count($this->chatHistory) <= $maxEntries) {
+            return $this->chatHistory;
+        }
+        return array_values(array_slice($this->chatHistory, -$maxEntries));
     }
 
     /**
